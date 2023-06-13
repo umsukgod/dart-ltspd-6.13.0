@@ -374,6 +374,8 @@ public:
   // Documentation inherited
   double getForceLowerLimit(std::size_t index) const override;
 
+  void setSPDParam(double _ki) override;
+
   // Documentation inherited
   void setForceLowerLimits(const Eigen::VectorXd& lowerLimits) override;
 

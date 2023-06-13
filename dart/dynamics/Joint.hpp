@@ -496,6 +496,8 @@ public:
   /// Set the forces of all generalized coordinates in this Joint
   virtual void setForces(const Eigen::VectorXd& _forces) = 0;
 
+  virtual void setSPDParam(double _ki) = 0;
+  
   /// Get the forces of all generalized coordinates in this Joint
   virtual Eigen::VectorXd getForces() const = 0;
 

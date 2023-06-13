@@ -1203,6 +1203,13 @@ void GenericJoint<ConfigSpaceT>::setForces(const Eigen::VectorXd& forces)
 
 //==============================================================================
 template <class ConfigSpaceT>
+void GenericJoint<ConfigSpaceT>::setSPDParam(const double _ki)
+{
+  Joint::mAspectProperties.ki = _ki;
+}
+
+//==============================================================================
+template <class ConfigSpaceT>
 Eigen::VectorXd GenericJoint<ConfigSpaceT>::getForces() const
 {
   return this->mAspectState.mForces;
@@ -1307,6 +1314,7 @@ template <class ConfigSpaceT>
 void GenericJoint<ConfigSpaceT>::resetForces()
 {
   this->mAspectState.mForces.setZero();
+  setSPDParam(0.0);
 
   if (Joint::mAspectProperties.mActuatorType == Joint::FORCE)
     this->mAspectState.mCommands = this->mAspectState.mForces;
@@ -1875,9 +1883,14 @@ template <class ConfigSpaceT>
 void GenericJoint<ConfigSpaceT>::updateInvProjArtInertiaDynamic(
     const Eigen::Matrix6d& artInertia)
 {
+  // for linear time Stable PD
+  Eigen::MatrixXd Ki(mInvProjArtInertia.rows(), mInvProjArtInertia.cols());
+  Ki.setIdentity();
+  Ki *= Joint::mAspectProperties.ki;
+
   // Projected articulated inertia
   const JacobianMatrix& Jacobian = getRelativeJacobianStatic();
-  const Matrix projAI = Jacobian.transpose() * artInertia * Jacobian;
+  const Matrix projAI = Jacobian.transpose() * artInertia * Jacobian + Ki;
 
   // Inversion of projected articulated inertia
   mInvProjArtInertia = math::inverse<ConfigSpaceT>(projAI);
@@ -1923,9 +1936,14 @@ template <class ConfigSpaceT>
 void GenericJoint<ConfigSpaceT>::updateInvProjArtInertiaImplicitDynamic(
     const Eigen::Matrix6d& artInertia, double timeStep)
 {
+  // for linear time Stable PD
+  Eigen::MatrixXd Ki(mInvProjArtInertia.rows(), mInvProjArtInertia.cols());
+  Ki.setIdentity();
+  Ki *= Joint::mAspectProperties.ki;
+
   // Projected articulated inertia
   const JacobianMatrix& Jacobian = getRelativeJacobianStatic();
-  Matrix projAI = Jacobian.transpose() * artInertia * Jacobian;
+  Matrix projAI = Jacobian.transpose() * artInertia * Jacobian + Ki;
 
   // Add additional inertia for implicit damping and spring force
   projAI += (timeStep * Base::mAspectProperties.mDampingCoefficients
